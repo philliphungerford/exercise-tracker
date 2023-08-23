@@ -31,12 +31,15 @@ library(scales) # add comma to output
 library(DT)
 ##############################################################################
 # SETTINGS
-github_link <- 'https://github.com/philliphungerford/exercise-tracker'
+github_link <-
+  'https://github.com/philliphungerford/exercise-tracker'
 website_link <- 'https://philliphungerford.github.io'
 
 # Tab Names
-TabNames <- c("Data",
-              "Plates")
+TabNames <- c("Lifts",
+              "Plates",
+              "Exercise",
+              "Metrics")
 
 ##############################################################################
 # TAB 1: USER INTERFACE
@@ -74,7 +77,9 @@ ui <- dashboardPage(
   dashboardSidebar(sidebarMenu(
     # icons from (https://fontawesome.com/v4.7.0/icons/)
     menuItem(TabNames[1], tabName = TabNames[1], icon = icon("desktop")),
-    menuItem(TabNames[2], tabName = TabNames[2], icon = icon("chart-bar"))
+    menuItem(TabNames[2], tabName = TabNames[2], icon = icon("chart-bar")),
+    #menuItem(TabNames[3], tabName = TabNames[3], icon = icon("chart-bar")), # in progress
+    menuItem(TabNames[4], tabName = TabNames[4], icon = icon("chart-bar"))
     
   )),
   #=========================================================================
@@ -110,17 +115,26 @@ ui <- dashboardPage(
                selectInput(
                  "Exercise",
                  "Exercise",
-                 choices = c("Deadlift", "Squat", "Bench", "Press", "Row", "Abs")
-               ),),
+                 choices = c(
+                   "Deadlift",
+                   "Squat",
+                   "Bench",
+                   "Press",
+                   "Row",
+                   "Abs",
+                   "Bicep Curl",
+                   "Tricep Extension"
+                 )
+               ), ),
         column(width = 2,
-               numericInput("Load", "Load", value = 0),),
+               numericInput("Load", "Load", value = 0), ),
         column(width = 2,
-               numericInput("RepTarget", "Rep Target", value = 0),),
+               numericInput("RepTarget", "Rep Target", value = 0), ),
         column(width = 2,
-               numericInput("RepActual", "Rep Actual", value = 0),),
+               numericInput("RepActual", "Rep Actual", value = 0), ),
         column(width = 2,
                
-               textInput("Note", "Note"),),
+               textInput("Note", "Note"), ),
       ),
       
       
@@ -131,13 +145,15 @@ ui <- dashboardPage(
         
       )),
       
-      fluidRow(column(
-        width = 12,
-        numericInput("DeleteSetId", "Row to Delete", value = 1),
-        actionButton("DeleteSet", "Delete Set"),
-        downloadButton("DownloadData", "Download Data"),
-        
-      )),
+      fluidRow(
+        column(
+          width = 12,
+          numericInput("DeleteSetId", "Row to Delete", value = -1),
+          actionButton("DeleteSet", "Delete Set"),
+          downloadButton("DownloadData", "Download Data"),
+          
+        )
+      ),
       
       fluidRow(column(
         width = 12,
@@ -148,20 +164,111 @@ ui <- dashboardPage(
       fluidRow(column(
         width = 12,
         h2("Historical"),
-        DTOutput("FactSetsAll")
+        DTOutput("FactSetAll")
       ))
     ),
     
     tabItem(tabName = TabNames[2],
             
+            fluidRow(
+              column(
+                width = 12,
+                h1("Plate Reference Guide"),
+                downloadButton("DownloadDimData", "Download Data"),
+                h1(""),
+                DTOutput("DimPlate")
+              )
+            )),
+    
+    # exercise
+    tabItem(tabName = TabNames[3],
+            
             fluidRow(column(
               width = 12,
-              h1("Plate Reference Guide"),
-              downloadButton("DownloadDimData", "Download Data"),
-              h1(""),
-              DTOutput("DimPlates")
-            )))
+              h1("Exercise Breakdown"),
+            ))),
     
+    # measures
+    tabItem(
+      tabName = TabNames[4],
+      
+      fluidRow(column(width = 2,
+                      h1("Measures"))
+               ),
+      
+      fluidRow(
+        column(width = 3,
+               uiOutput("BoxWeight")),
+        column(width = 3,
+               uiOutput("BoxBodyFat")),
+        column(width = 3,
+               uiOutput("BoxMuscleMass")),
+        column(width = 3,
+               uiOutput("BoxAverageSleep")),
+        column(width = 3,
+               uiOutput("BoxAverageSteps")),
+      ),
+      
+      fluidRow(
+      column(width = 2,
+             selectInput(
+               "SelectMetric",
+               "Metric",
+               choices = c(
+                 "WeightKG",
+                 "BodyFat",
+                 "MuscleMass",
+                 "Sleep_hrs_min",
+                 "Nap_hrs_min",
+                 "Steps"
+               )
+             ))),
+      
+      fluidRow(column(width = 12,
+                      plotOutput("PlotMetric"))),
+      
+      fluidRow(column(width = 2,
+                      dateInput("MDate", "Date", value = Sys.Date())),
+      ),
+      
+      fluidRow(
+        column(width = 2,
+               numericInput("WeightKG", "WeightKG", value = 0)),
+        column(width = 2,
+               numericInput("BodyFat", "BodyFat", value = 0)),
+        column(width = 2,
+               numericInput("MuscleMass", "MuscleMass", value = 0)),
+        column(width = 2,
+               numericInput("Sleep_hrs_min", "Sleep_hrs_min", value = 0)),
+        column(width = 2,
+               numericInput("Nap_hrs_min", "Nap_hrs_min", value = 0)),
+        column(width = 2,
+               numericInput("Steps", "Steps", value = 0)),
+      ),
+      
+      fluidRow(
+      column(width = 2,
+             actionButton("AddMeasure", "Add Measure", style = 'margin-top:25px'))
+      ),
+      fluidRow(
+        column(
+          width = 2,
+          numericInput("DeleteMeasureId", "Row to Delete", value = -1),
+        ),
+        column(
+          width = 2,
+          actionButton("DeleteMeasure", "Delete Set", style = 'margin-top:25px')
+        )
+      ),
+      
+      fluidRow(column(
+        width = 12,
+        downloadButton("DownloadMeasureData", "Download Data")
+      )),
+      
+      fluidRow(column(width = 12,
+                      DTOutput("FactMeasureAll")))
+    )
     #-----------------------------------------------------------------
   ))
 )
@@ -175,14 +282,14 @@ ui <- dashboardPage(
 ##############################################################################
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  
-  DimPlates <- read.csv("DimPlates.csv")
-  FactSets <- reactiveVal(read.csv("FactSets.csv"))
+  DimPlate <- read.csv("DimPlate.csv")
+  FactSet <- reactiveVal(read.csv("FactSet.csv"))
+  FactMeasure <- reactiveVal(read.csv("FactMeasure.csv"))
   
   output$BoxDeadliftMax <- renderValueBox({
     valueBox(
       value = round((max(
-        FactSets()$Load[FactSets()$Exercise == "Deadlift"], na.rm = T
+        FactSet()$Load[FactSet()$Exercise == "Deadlift"], na.rm = T
       )) / 2.2, 0),
       subtitle = "Deadlift Max",
       color = "blue",
@@ -194,7 +301,7 @@ server <- function(input, output) {
   output$BoxSquatMax <- renderValueBox({
     valueBox(
       value = round((max(
-        FactSets()$Load[FactSets()$Exercise == "Squat"], na.rm = T
+        FactSet()$Load[FactSet()$Exercise == "Squat"], na.rm = T
       )) / 2.2, 0),
       subtitle = "Squat Max",
       color = "red",
@@ -205,7 +312,7 @@ server <- function(input, output) {
   output$BoxBenchMax <- renderValueBox({
     valueBox(
       value = round((max(
-        FactSets()$Load[FactSets()$Exercise == "Bench"], na.rm = T
+        FactSet()$Load[FactSet()$Exercise == "Bench"], na.rm = T
       )) / 2.2, 0),
       subtitle = "Bench Max",
       color = "orange",
@@ -216,7 +323,7 @@ server <- function(input, output) {
   output$BoxPressMax <- renderValueBox({
     valueBox(
       value = round((max(
-        FactSets()$Load[FactSets()$Exercise == "Press"], na.rm = T
+        FactSet()$Load[FactSet()$Exercise == "Press"], na.rm = T
       )) / 2.2, 0),
       subtitle = "Press Max",
       color = "green",
@@ -225,7 +332,7 @@ server <- function(input, output) {
   })
   
   observeEvent(input$AddSet, {
-    new_id <- max(FactSets()$Id) + 1
+    new_id <- max(FactSet()$Id) + 1
     new_entry <-
       data.frame(
         Id = new_id,
@@ -237,32 +344,32 @@ server <- function(input, output) {
         RepActual = input$RepActual,
         Note = input$Note
       )
-    updated_data <- rbind(FactSets(), new_entry)
-    FactSets(updated_data)
-    write.csv(FactSets(), "FactSets.csv", row.names = FALSE)
+    updated_data <- rbind(FactSet(), new_entry)
+    FactSet(updated_data)
+    write.csv(FactSet(), "FactSet.csv", row.names = FALSE)
   })
   
   observeEvent(input$DeleteSet, {
-    updated_data <- FactSets()[!FactSets()$Id == input$DeleteSetId,]
-    FactSets(updated_data)
-    write.csv(FactSets(), "FactSets.csv", row.names = FALSE)
+    updated_data <- FactSet()[!FactSet()$Id == input$DeleteSetId, ]
+    FactSet(updated_data)
+    write.csv(FactSet(), "FactSet.csv", row.names = FALSE)
   })
   
   output$FactSetsToday <- renderDT({
     Results <-
-      FactSets() %>% arrange(desc(Id))
+      FactSet() %>% arrange(desc(Id))
     
     datatable(
-      Results[Results$Date == Sys.Date(),],
+      Results[Results$Date == Sys.Date(), ],
       editable = TRUE,
       options = list(pageLength = -1),
       rownames = FALSE
     )
   })
   
-  output$FactSetsAll <- renderDT({
+  output$FactSetAll <- renderDT({
     Results <-
-      FactSets() %>% arrange(desc(Id)) %>% filter(Date != Sys.Date())
+      FactSet() %>% arrange(desc(Id)) %>% filter(Date != Sys.Date())
     datatable(
       Results,
       editable = TRUE,
@@ -271,21 +378,33 @@ server <- function(input, output) {
     )
   })
   
-  output$DimPlates <- renderDT({
-    datatable(DimPlates,
+  output$FactMeasureAll <- renderDT({
+    Results <-
+      FactMeasure() %>% arrange(desc(Id))
+    datatable(
+      Results,
+      editable = TRUE,
+      options = list(pageLength = -1),
+      rownames = FALSE
+    )
+  })
+  
+  
+  output$DimPlate <- renderDT({
+    datatable(DimPlate,
               options = list(pageLength = -1),
               rownames = FALSE)
   })
   
   output$PlotMaxLifts <- renderPlot({
-    FactSets <- FactSets()
+    FactSet <- FactSet()
     
-    FactSets$Date <- as.Date(FactSets$Date, format = "%Y-%m-%d")
+    FactSet$Date <- as.Date(FactSet$Date, format = "%Y-%m-%d")
     
-    FactSets$Load <- FactSets$Load / 2.2
+    FactSet$Load <- FactSet$Load / 2.2
     
     filtered_data <-
-      FactSets %>% select(Date, Exercise, Load) %>% filter(Exercise %in% c("Deadlift", "Squat", "Bench", "Press"))
+      FactSet %>% select(Date, Exercise, Load) %>% filter(Exercise %in% c("Deadlift", "Squat", "Bench", "Press"))
     
     filtered_data$Month <- format(filtered_data$Date, "%Y-%m")
     
@@ -304,28 +423,145 @@ server <- function(input, output) {
       geom_point() +
       labs(title = "Max Load by Exercise and Month", x = "Month", y = "Max Load") +
       theme_classic() +
-      theme(axis.text.x = element_text(angle = 270, hjust = 1)) + 
-      scale_color_manual(values = c("Deadlift" = "blue", "Squat" = "red", "Bench" = "orange", "Press" = "green"))
+      theme(axis.text.x = element_text(angle = 270, hjust = 1)) +
+      scale_color_manual(values = c(
+        "Deadlift" = "blue",
+        "Squat" = "red",
+        "Bench" = "orange",
+        "Press" = "green"
+      ))
     
   })
   
   output$DownloadData <- downloadHandler(
     filename = function() {
-      paste("FactSets", Sys.Date(), ".csv", sep = "_")
+      paste("FactSet", Sys.Date(), ".csv", sep = "_")
     },
     content = function(file) {
-      write.csv(FactSets(), file)
+      write.csv(FactSet(), file)
     }
   )
   
   output$DownloadDimData <- downloadHandler(
     filename = function() {
-      paste("DimPlates", Sys.Date(), ".csv", sep = "_")
+      paste("DimPlate", Sys.Date(), ".csv", sep = "_")
     },
     content = function(file) {
-      write.csv(DimPlates, file)
+      write.csv(DimPlate, file)
     }
   )
+  
+  output$DownloadMeasureData <- downloadHandler(
+    filename = function() {
+      paste("FactMeasure", Sys.Date(), ".csv", sep = "_")
+    },
+    content = function(file) {
+      write.csv(FactMeasure(), file)
+    }
+  )
+  
+  observeEvent(input$AddMeasure, {
+    new_id <- max(FactMeasure()$Id) + 1
+    Date = as.character(input$MDate)
+    new_entry <-
+      data.frame(
+        Id = new_id,
+        Date = as.character(input$MDate),
+        WeightKG = input$WeightKG,
+        BodyFat = input$BodyFat,
+        MuscleMass = input$MuscleMass,
+        Sleep_hrs_min = input$Sleep_hrs_min,
+        Nap_hrs_min = input$Nap_hrs_min,
+        Steps = input$Steps
+      )
+    
+    updated_data <- rbind(FactMeasure(), new_entry)
+    FactMeasure(updated_data)
+    write.csv(FactMeasure(), "FactMeasure.csv", row.names = FALSE)
+  })
+  
+  observeEvent(input$DeleteMeasure, {
+    updated_data <-
+      FactMeasure()[!FactMeasure()$Id == input$DeleteMeasureId, ]
+    FactMeasure(updated_data)
+    write.csv(FactMeasure(), "FactMeasure.csv", row.names = FALSE)
+  })
+  
+  output$BoxWeight <- renderValueBox({
+    valueBox(
+      value = FactMeasure()$WeightKG[FactMeasure()$Date == max(FactMeasure()$Date, na.rm=T)],
+      subtitle = "Weight KG",
+      color = "blue",
+      icon = icon("arrow-up")
+      
+    )
+  })
+  
+  output$BoxBodyFat <- renderValueBox({
+    valueBox(
+      value = FactMeasure()$BodyFat[FactMeasure()$Date == max(FactMeasure()$Date, na.rm=T)],
+      subtitle = "Current Body fat %",
+      color = "red",
+      icon = icon("arrow-up")
+    )
+  })
+  
+  output$BoxMuscleMass <- renderValueBox({
+    valueBox(
+      value = FactMeasure()$MuscleMass[FactMeasure()$Date == max(FactMeasure()$Date, na.rm=T)],
+      subtitle = "Current Muscle Mass",
+      color = "orange",
+      icon = icon("arrow-up")
+    )
+  })
+  
+  output$BoxAverageSleep <- renderValueBox({
+    valueBox(
+      value = round(mean(FactMeasure()$Sleep_hrs_min, na.rm=T),2),
+      subtitle = "Sleep Average",
+      color = "green",
+      icon = icon("arrow-up")
+    )
+  })
+  
+  output$BoxAverageSteps <- renderValueBox({
+    valueBox(
+      value = round(mean(FactMeasure()$Steps, na.rm=T),2),
+      subtitle = "Steps Average",
+      color = "green",
+      icon = icon("arrow-up")
+    )
+  })
+  
+  output$PlotMetric <- renderPlot({
+    
+    FactMeasure <- FactMeasure()
+    
+    SelectedCol <- c("Date", input$SelectMetric)
+    
+    df <- FactMeasure %>% select(all_of(SelectedCol))
+    
+    names(df)[2] <- "Value"
+    
+    df$Date <- as.Date(df$Date, format = "%Y-%m-%d")
+    df$Month <- format(df$Date, "%Y-%m")
+    df$Value <- as.numeric(df$Value)
+
+    df$Group = 1
+    
+    ggplot(df,
+           aes(
+             x = Date,
+             y = Value,
+             group=Group
+           )) +
+      geom_line() +
+      geom_point() +
+      theme_classic() +
+      theme(axis.text.x = element_text(angle = 270, hjust = 1)) +
+      geom_smooth(method = "lm", se = FALSE)  # "lm" stands for linear model
+    
+  })
   
 }
 ##############################################################################
@@ -335,3 +571,11 @@ shinyApp(ui = ui, server = server)
 ##############################################################################
 ################################### END ######################################
 ##############################################################################
+
+# work in progress
+# SleepMins = (as.integer(Sleep_hrs_min) * 60 ) + (Sleep_hrs_min - as.integer(Sleep_hrs_min))*100,
+# NapMins = (as.integer(Nap_hrs_min) * 60 ) + (Nap_hrs_min - as.integer(Nap_hrs_min))*100,
+# TotalSleepMins = SleepMins + NapMins,
+# SleepHrsAdj = 0,
+# NapHrsAdj = 0,
+# TotalSleepHrsAdj = TotalSleepMins/60

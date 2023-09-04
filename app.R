@@ -347,9 +347,9 @@ ui <- dashboardPage(
 ##############################################################################
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  DimPlate <- read.csv("DimPlate.csv")
-  FactSet <- reactiveVal(read.csv("FactSet.csv"))
-  FactMeasure <- reactiveVal(read.csv("FactMeasure.csv"))
+  DimPlate <- read.csv("data/DimPlate.csv")
+  FactSet <- reactiveVal(read.csv("data/FactSet.csv"))
+  FactMeasure <- reactiveVal(read.csv("data/FactMeasure.csv"))
   
   output$BoxDeadliftMax <- renderValueBox({
     valueBox(
@@ -411,13 +411,13 @@ server <- function(input, output) {
       )
     updated_data <- rbind(FactSet(), new_entry)
     FactSet(updated_data)
-    write.csv(FactSet(), "FactSet.csv", row.names = FALSE)
+    write.csv(FactSet(), "data/FactSet.csv", row.names = FALSE)
   })
   
   observeEvent(input$DeleteSet, {
     updated_data <- FactSet()[!FactSet()$Id == input$SelectSetId, ]
     FactSet(updated_data)
-    write.csv(FactSet(), "FactSet.csv", row.names = FALSE)
+    write.csv(FactSet(), "data/FactSet.csv", row.names = FALSE)
   })
   
   output$FactSetsToday <- renderDT({
@@ -559,14 +559,14 @@ server <- function(input, output) {
     
     updated_data <- rbind(FactMeasure(), new_entry)
     FactMeasure(updated_data)
-    write.csv(FactMeasure(), "FactMeasure.csv", row.names = FALSE)
+    write.csv(FactMeasure(), "data/FactMeasure.csv", row.names = FALSE)
   })
   
   observeEvent(input$DeleteMeasure, {
     updated_data <-
       FactMeasure()[!FactMeasure()$Id == input$SelectMeasureId, ]
     FactMeasure(updated_data)
-    write.csv(FactMeasure(), "FactMeasure.csv", row.names = FALSE)
+    write.csv(FactMeasure(), "data/FactMeasure.csv", row.names = FALSE)
   })
   
   output$BoxWeight <- renderValueBox({
@@ -684,7 +684,7 @@ server <- function(input, output) {
     edited_data[input$SelectMeasureId, "Nap_hrs_min"] <- input$Nap_hrs_min
     edited_data[input$SelectMeasureId, "Steps"] <- input$Steps
     FactMeasure(edited_data)
-    write.csv(FactMeasure(), "FactMeasure.csv", row.names = FALSE)
+    write.csv(FactMeasure(), "data/FactMeasure.csv", row.names = FALSE)
   })
   
   
@@ -697,7 +697,7 @@ server <- function(input, output) {
     edited_data[input$SelectSetId, "RepActual"] <- input$RepActual
     edited_data[input$SelectSetId, "Note"]      <- input$Note
     FactSet(edited_data)
-    write.csv(FactSet(), "FactSet.csv", row.names = FALSE)
+    write.csv(FactSet(), "data/FactSet.csv", row.names = FALSE)
   })
   
   output$DataSelectedExercise <- renderDT({

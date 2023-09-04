@@ -29,6 +29,7 @@ library(tools)
 library(tidyverse) # adds to title case
 library(scales) # add comma to output
 library(DT)
+library(fresh)
 ##############################################################################
 # SETTINGS
 github_link <-
@@ -45,6 +46,23 @@ round_to_nearest_5 <- function(x) {
   rounded <- round(x / 5) * 5
   return(rounded)
 }
+
+mytheme <- create_theme(
+  adminlte_color(
+    light_blue = "#434C5E"
+  ),
+  adminlte_sidebar(
+    width = "400px",
+    dark_bg = "#D8DEE9",
+    dark_hover_bg = "#81A1C1",
+    dark_color = "#2E3440"
+  ),
+  adminlte_global(
+    content_bg = "#FFF",
+    box_bg = "#D8DEE9", 
+    info_box_bg = "#D8DEE9"
+  )
+)
 ##############################################################################
 # TAB 1: USER INTERFACE
 ##############################################################################
@@ -88,232 +106,236 @@ ui <- dashboardPage(
   )),
   #=========================================================================
   ## Body content
-  dashboardBody(tabItems(
-    tabItem(
-      tabName = TabNames[1],
-      
-      h1("Summary"),
-      
-      fluidRow(
-        column(width = 3,
-               uiOutput("BoxDeadliftMax")),
+  
+  dashboardBody(
+    use_theme(mytheme),
+    tabItems(
+      tabItem(
+        tabName = TabNames[1],
         
-        column(width = 3,
-               uiOutput("BoxSquatMax")),
+        h1("Summary"),
         
-        column(width = 3,
-               uiOutput("BoxBenchMax")),
-        column(width = 3,
-               uiOutput("BoxPressMax")),
-      ),
-      
-      fluidRow(column(width = 12,
-                      plotOutput("PlotMaxLifts"),
-                      selectInput("SelectFrequency", "Frequency", choices=c("Monthly", "Weekly", "Daily")))
-               ),
-      
-      h1("Data"),
-      p("Note that Load is in pounds (lbs) and is converted to kg."),
-      
-      fluidRow(
-        column(width = 2,
-               dateInput("Date", "Date", value = Sys.Date()),),
-        column(width = 2,
-               selectInput(
-                 "Exercise",
-                 "Exercise",
-                 choices = c(
-                   "Deadlift",
-                   "Squat",
-                   "Bench",
-                   "Press",
-                   "Row",
-                   "Abs",
-                   "Bicep Curl",
-                   "Tricep Extension"
-                 )
-               )),
-        column(width = 2,
-               numericInput("Load", "Load", value = 0), ),
-        column(width = 2,
-               numericInput("RepTarget", "Rep Target", value = 0), ),
-        column(width = 2,
-               numericInput("RepActual", "Rep Actual", value = 0), ),
-        column(width = 2,
-               
-               textInput("Note", "Note"), ),
-      ),
-      
-      
-      fluidRow(
-        column(
-          width = 2,
-          numericInput("SelectSetId", "Select Id to Edit or Delete", value = -1),
+        fluidRow(
+          column(width = 3,
+                 uiOutput("BoxDeadliftMax")),
+          
+          column(width = 3,
+                 uiOutput("BoxSquatMax")),
+          
+          column(width = 3,
+                 uiOutput("BoxBenchMax")),
+          column(width = 3,
+                 uiOutput("BoxPressMax")),
         ),
-        column(
-        width = 2,
-        actionButton("AddSet", "Add Set", style = 'margin-top:25px; color: white; background-color: #28A745; border-color: #28A745;'),
-      ),
-      column(
-        width = 2,
-        actionButton("EditSet", "Edit Set", style = 'margin-top:25px; color: white; background-color: #6C757D; border-color: #6C757D;'),
-      ),
-      column(
-        width = 2,
-        actionButton("DeleteSet", "Delete Set", style = 'margin-top:25px; color: white; background-color: #DC3545; border-color: #DC3545;'),
-      ),
-      ),
-      
-      fluidRow(
-        column(
+        
+        fluidRow(column(width = 12,
+                        plotOutput("PlotMaxLifts"),
+                        selectInput("SelectFrequency", "Frequency", choices=c("Monthly", "Weekly", "Daily")))
+        ),
+        
+        h1("Data"),
+        p("Note that Load is in pounds (lbs) and is converted to kg."),
+        
+        fluidRow(
+          column(width = 2,
+                 dateInput("Date", "Date", value = Sys.Date()),),
+          column(width = 2,
+                 selectInput(
+                   "Exercise",
+                   "Exercise",
+                   choices = c(
+                     "Deadlift",
+                     "Squat",
+                     "Bench",
+                     "Press",
+                     "Row",
+                     "Abs",
+                     "Bicep Curl",
+                     "Tricep Extension"
+                   )
+                 )),
+          column(width = 2,
+                 numericInput("Load", "Load", value = 0), ),
+          column(width = 2,
+                 numericInput("RepTarget", "Rep Target", value = 0), ),
+          column(width = 2,
+                 numericInput("RepActual", "Rep Actual", value = 0), ),
+          column(width = 2,
+                 
+                 textInput("Note", "Note"), ),
+        ),
+        
+        
+        fluidRow(
+          column(
+            width = 2,
+            numericInput("SelectSetId", "Select Id to Edit or Delete", value = -1),
+          ),
+          column(
+            width = 2,
+            actionButton("AddSet", "Add Set", style = 'margin-top:25px; color: white; background-color: #28A745; border-color: #28A745;'),
+          ),
+          column(
+            width = 2,
+            actionButton("EditSet", "Edit Set", style = 'margin-top:25px; color: white; background-color: #6C757D; border-color: #6C757D;'),
+          ),
+          column(
+            width = 2,
+            actionButton("DeleteSet", "Delete Set", style = 'margin-top:25px; color: white; background-color: #DC3545; border-color: #DC3545;'),
+          ),
+        ),
+        
+        fluidRow(
+          column(
+            width = 12,
+            downloadButton("DownloadData", "Download Data"),
+          )
+        ),
+        
+        fluidRow(column(
           width = 12,
-          downloadButton("DownloadData", "Download Data"),
-        )
-      ),
-      
-      fluidRow(column(
-        width = 12,
-        h2("Today"),
-        DTOutput("FactSetsToday")
-      )),
-      
-      fluidRow(column(
-        width = 12,
-        h2("Historical"),
-        DTOutput("FactSetAll")
-      ))
-    ),
-    
-    tabItem(tabName = TabNames[2],
-            
-            fluidRow(
-              column(
-                width = 12,
-                h1("Plate Reference Guide"),
-                downloadButton("DownloadDimData", "Download Data"),
-                h1(""),
-                DTOutput("DimPlate")
-              )
-            )),
-    
-    # exercise
-    tabItem(tabName = TabNames[3],
-            
-            fluidRow(column(
-              width = 12,
-              h1("Exercise Breakdown"),
-              
-            ),
-            column(width = 12,
-                   selectInput(
-                     "ExerciseBreakdown",
-                     "Select Exercise",
-                     choices = c(
-                       "Deadlift",
-                       "Squat",
-                       "Bench",
-                       "Press",
-                       "Row",
-                       "Abs",
-                       "Bicep Curl",
-                       "Tricep Extension"
-                     )
-                     ))),
-            fluidRow(column(
-              width = 12,
-              plotOutput("PlotSelectedExercise"),
-              DTOutput("DataSelectedExercise")
-            )
-            )
-            ),
-    
-    # measures
-    tabItem(
-      tabName = TabNames[4],
-      
-      fluidRow(column(width = 2,
-                      h1("Measures"))
-               ),
-      
-      fluidRow(
-        column(width = 2,
-               uiOutput("BoxWeight")),
-        column(width = 2,
-               uiOutput("BoxBodyFat")),
-        column(width = 2,
-               uiOutput("BoxMuscleMass")),
-        column(width = 2,
-               uiOutput("BoxAverageSleep")),
-        column(width = 2,
-               uiOutput("BoxAverageSteps")),
-      ),
-      
-      fluidRow(
-      column(width = 2,
-             selectInput(
-               "SelectMetric",
-               "Metric",
-               choices = c(
-                 "WeightKG",
-                 "BodyFat",
-                 "MuscleMass",
-                 "Sleep_hrs_min",
-                 "Nap_hrs_min",
-                 "Steps"
-               )
-             ))),
-      
-      fluidRow(column(width = 12,
-                      plotOutput("PlotMetric"))),
-      
-      fluidRow(column(width = 2,
-                      dateInput("MDate", "Date", value = Sys.Date())),
-      ),
-      
-      fluidRow(
-        column(width = 2,
-               numericInput("WeightKG", "WeightKG", value = 0)),
-        column(width = 2,
-               numericInput("BodyFat", "BodyFat", value = 0)),
-        column(width = 2,
-               numericInput("MuscleMass", "MuscleMass", value = 0)),
-        column(width = 2,
-               numericInput("Sleep_hrs_min", "Sleep_hrs_min", value = 0)),
-        column(width = 2,
-               numericInput("Nap_hrs_min", "Nap_hrs_min", value = 0)),
-        column(width = 2,
-               numericInput("Steps", "Steps", value = 0)),
-      ),
-      fluidRow(
+          h2("Today"),
+          DTOutput("FactSetsToday")
+        )),
         
-        column(
-          width = 2,
-          numericInput("SelectMeasureId", "Select Id to Edit or Delete", value = -1),
+        fluidRow(column(
+          width = 12,
+          h2("Historical"),
+          DTOutput("FactSetAll")
+        ))
+      ),
+      
+      tabItem(tabName = TabNames[2],
+              
+              fluidRow(
+                column(
+                  width = 12,
+                  h1("Plate Reference Guide"),
+                  downloadButton("DownloadDimData", "Download Data"),
+                  h1(""),
+                  DTOutput("DimPlate")
+                )
+              )),
+      
+      # exercise
+      tabItem(tabName = TabNames[3],
+              
+              fluidRow(column(
+                width = 12,
+                h1("Exercise Breakdown"),
+                
+              ),
+              column(width = 12,
+                     selectInput(
+                       "ExerciseBreakdown",
+                       "Select Exercise",
+                       choices = c(
+                         "Deadlift",
+                         "Squat",
+                         "Bench",
+                         "Press",
+                         "Row",
+                         "Abs",
+                         "Bicep Curl",
+                         "Tricep Extension"
+                       )
+                     ))),
+              fluidRow(column(
+                width = 12,
+                plotOutput("PlotSelectedExercise"),
+                DTOutput("DataSelectedExercise")
+              )
+              )
+      ),
+      
+      # measures
+      tabItem(
+        tabName = TabNames[4],
+        
+        fluidRow(column(width = 2,
+                        h1("Measures"))
         ),
-        column(
-          width = 2,
-          actionButton("AddMeasure", "Add Measure", style = 'margin-top:25px; color: white; background-color: #28A745; border-color: #28A745;'),
-                  ),
-        column(
-          width = 2,
-          actionButton("EditMeasure", "Edit Measure", style = 'margin-top:25px; color: white; background-color: #6C757D; border-color: #6C757D;')
-      ),
-        column(
-          width = 2,
-          actionButton("DeleteMeasure", "Delete Measure", style = 'margin-top:25px; color: white; background-color: #DC3545; border-color: #DC3545;')
-        )
-      ),
-      
-      fluidRow(column(
-        width = 12,
-        downloadButton("DownloadMeasureData", "Download Data")
-      )),
-      
-      fluidRow(column(width = 12,
-                      DTOutput("FactMeasureAll")))
+        
+        fluidRow(
+          column(width = 2,
+                 uiOutput("BoxWeight")),
+          column(width = 2,
+                 uiOutput("BoxBodyFat")),
+          column(width = 2,
+                 uiOutput("BoxMuscleMass")),
+          column(width = 2,
+                 uiOutput("BoxAverageSleep")),
+          column(width = 2,
+                 uiOutput("BoxAverageSteps")),
+        ),
+        
+        fluidRow(
+          column(width = 2,
+                 selectInput(
+                   "SelectMetric",
+                   "Metric",
+                   choices = c(
+                     "WeightKG",
+                     "BodyFat",
+                     "MuscleMass",
+                     "Sleep_hrs_min",
+                     "Nap_hrs_min",
+                     "Steps"
+                   )
+                 ))),
+        
+        fluidRow(column(width = 12,
+                        plotOutput("PlotMetric"))),
+        
+        fluidRow(column(width = 2,
+                        dateInput("MDate", "Date", value = Sys.Date())),
+        ),
+        
+        fluidRow(
+          column(width = 2,
+                 numericInput("WeightKG", "WeightKG", value = 0)),
+          column(width = 2,
+                 numericInput("BodyFat", "BodyFat", value = 0)),
+          column(width = 2,
+                 numericInput("MuscleMass", "MuscleMass", value = 0)),
+          column(width = 2,
+                 numericInput("Sleep_hrs_min", "Sleep_hrs_min", value = 0)),
+          column(width = 2,
+                 numericInput("Nap_hrs_min", "Nap_hrs_min", value = 0)),
+          column(width = 2,
+                 numericInput("Steps", "Steps", value = 0)),
+        ),
+        fluidRow(
+          
+          column(
+            width = 2,
+            numericInput("SelectMeasureId", "Select Id to Edit or Delete", value = -1),
+          ),
+          column(
+            width = 2,
+            actionButton("AddMeasure", "Add Measure", style = 'margin-top:25px; color: white; background-color: #28A745; border-color: #28A745;'),
+          ),
+          column(
+            width = 2,
+            actionButton("EditMeasure", "Edit Measure", style = 'margin-top:25px; color: white; background-color: #6C757D; border-color: #6C757D;')
+          ),
+          column(
+            width = 2,
+            actionButton("DeleteMeasure", "Delete Measure", style = 'margin-top:25px; color: white; background-color: #DC3545; border-color: #DC3545;')
+          )
+        ),
+        
+        fluidRow(column(
+          width = 12,
+          downloadButton("DownloadMeasureData", "Download Data")
+        )),
+        
+        fluidRow(column(width = 12,
+                        DTOutput("FactMeasureAll")))
+      )
+      #-----------------------------------------------------------------
     )
-    #-----------------------------------------------------------------
-  ))
+  )
 )
 
 #=========================================================================
@@ -471,7 +493,7 @@ server <- function(input, output) {
         summarize(Max_Load = max(Load), .groups = "drop") %>% 
         rename("Time" = "Day")
     }
-
+    
     ggplot(Results,
            aes(
              x = Time,
@@ -616,7 +638,7 @@ server <- function(input, output) {
       theme_classic() +
       theme(axis.text.x = element_text(angle = 270, hjust = 1)) +
       geom_smooth(method = "lm", se = FALSE) #+
-      #geom_text(aes(label = Load), vjust = -1)
+    #geom_text(aes(label = Load), vjust = -1)
     
   })
   
@@ -633,7 +655,7 @@ server <- function(input, output) {
     df$Date <- as.Date(df$Date, format = "%Y-%m-%d")
     df$Month <- format(df$Date, "%Y-%m")
     df$Value <- as.numeric(df$Value)
-
+    
     df$Group = 1
     
     ggplot(df,
@@ -647,7 +669,7 @@ server <- function(input, output) {
       theme_classic() +
       theme(axis.text.x = element_text(angle = 270, hjust = 1)) +
       geom_smooth(method = "lm", se = FALSE)# +
-      #geom_text(aes(label = Value), vjust = -1)
+    #geom_text(aes(label = Value), vjust = -1)
     
     
   })

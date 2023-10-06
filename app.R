@@ -22,6 +22,7 @@
 # Import libraries
 library(shiny) # for dashboard
 library(shinydashboard) # for tabs
+library(shinyWidgets)
 library(dplyr) # filtering
 library(RColorBrewer)
 library(ggplot2) # for figures
@@ -30,39 +31,51 @@ library(tidyverse) # adds to title case
 library(scales) # add comma to output
 library(DT)
 library(fresh)
+library(plotly) # convert ggplot to plotly and outputs ggplotly(p)
 ##############################################################################
 # SETTINGS
-github_link <-
-  'https://github.com/philliphungerford/exercise-tracker'
+github_link  <- 'https://github.com/philliphungerford/exercise-tracker'
 website_link <- 'https://philliphungerford.github.io'
 
 # Tab Names
-TabNames <- c("Lifts",
+TabNames <- c("Summary",
+              "Data",
               "Plates",
               "Exercise",
-              "Metrics")
+              "Metrics",
+              "Wendler")
 
 round_to_nearest_5 <- function(x) {
   rounded <- round(x / 5) * 5
   return(rounded)
 }
 
-mytheme <- create_theme(
-  adminlte_color(
-    light_blue = "#434C5E"
-  ),
-  adminlte_sidebar(
-    width = "400px",
-    dark_bg = "#D8DEE9",
-    dark_hover_bg = "#81A1C1",
-    dark_color = "#2E3440"
-  ),
-  adminlte_global(
-    content_bg = "#FFF",
-    box_bg = "#D8DEE9", 
-    info_box_bg = "#D8DEE9"
+WendlerCalc <- function(MaxWeight){
+  
+  PercentageMatrix <- data.frame(
+    Week1 = c(0.65, 0.75, 0.85),
+    Week2 = c(0.70, 0.80, 0.90),
+    Week3 = c(0.75, 0.85, 0.95),
+    Week4 = c(0.40, 0.50, 0.60)
   )
-)
+  
+  Max90 = MaxWeight * 1.06
+  #Max100 = Max90 * 1.10
+  
+  return(ceiling(Max90 * (PercentageMatrix/5))*5)
+}
+
+# Function to get the current week number from the CSV file
+getWeek <- function() {
+  week_data <- read.csv("data/FactWeek.csv")
+  return(week_data$week)
+}
+
+# Function to set the current week number in the CSV file
+setWeek <- function(week) {
+  write.csv(data.frame(week = week), "data/FactWeek.csv", row.names = FALSE)
+}
+
 ##############################################################################
 # TAB 1: USER INTERFACE
 ##############################################################################
@@ -98,127 +111,185 @@ ui <- dashboardPage(
   ## Sidebar content
   dashboardSidebar(sidebarMenu(
     # icons from (https://fontawesome.com/v4.7.0/icons/)
-    menuItem(TabNames[1], tabName = TabNames[1], icon = icon("desktop")),
-    menuItem(TabNames[4], tabName = TabNames[4], icon = icon("area-chart")),
-    menuItem(TabNames[3], tabName = TabNames[3], icon = icon("chart-bar")),
-    menuItem(TabNames[2], tabName = TabNames[2], icon = icon("search"))
-    
+    includeCSS("./www/mytheme.css"),
+    menuItem(TabNames[2], tabName = TabNames[2], icon = icon("table")),
+    menuItem(TabNames[1], tabName = TabNames[1], icon = icon("chart-simple")),
+    #menuItem(TabNames[5], tabName = TabNames[5], icon = icon("area-chart")),
+    #menuItem(TabNames[4], tabName = TabNames[4], icon = icon("chart-bar")),
+    menuItem(TabNames[3], tabName = TabNames[3], icon = icon("search"))
+    #menuItem(TabNames[6], tabName = TabNames[6], icon = icon("file"))
   )),
   #=========================================================================
   ## Body content
   
   dashboardBody(
-    use_theme(mytheme),
+    
     tabItems(
+      
       tabItem(
         tabName = TabNames[1],
         
-        h1("Summary"),
-        
         fluidRow(
-          column(width = 3,
-                 uiOutput("BoxDeadliftMax")),
+          column(12, 
+                 h2("Summary"),
+                 p("You can change the frequency for the plot below.")
+                 )
+        ),
+        
+        panel(
+          fluidRow(
+  
+            column(width = 3,
+                   uiOutput("BoxDeadliftMax")),
+            
+            column(width = 3,
+                   uiOutput("BoxSquatMax")),
+            
+            column(width = 3,
+                   uiOutput("BoxBenchMax")),
+            column(width = 3,
+                   uiOutput("BoxPressMax")),
+          ),
           
-          column(width = 3,
-                 uiOutput("BoxSquatMax")),
-          
-          column(width = 3,
-                 uiOutput("BoxBenchMax")),
-          column(width = 3,
-                 uiOutput("BoxPressMax")),
-        ),
-        
-        fluidRow(column(width = 12,
-                        plotOutput("PlotMaxLifts"),
-                        selectInput("SelectFrequency", "Frequency", choices=c("Monthly", "Weekly", "Daily")))
-        ),
-        
-        h1("Data"),
-        p("Note that Load is in pounds (lbs) and is converted to kg."),
-        
-        fluidRow(
-          column(width = 2,
-                 dateInput("Date", "Date", value = Sys.Date()),),
-          column(width = 2,
-                 selectInput(
-                   "Exercise",
-                   "Exercise",
-                   choices = c(
-                     "Deadlift",
-                     "Squat",
-                     "Bench",
-                     "Press",
-                     "Row",
-                     "Abs",
-                     "Bicep Curl",
-                     "Tricep Extension"
-                   )
-                 )),
-          column(width = 2,
-                 numericInput("Load", "Load", value = 0), ),
-          column(width = 2,
-                 numericInput("RepTarget", "Rep Target", value = 0), ),
-          column(width = 2,
-                 numericInput("RepActual", "Rep Actual", value = 0), ),
-          column(width = 2,
-                 
-                 textInput("Note", "Note"), ),
-        ),
-        
-        
-        fluidRow(
-          column(
-            width = 2,
-            numericInput("SelectSetId", "Select Id to Edit or Delete", value = -1),
-          ),
-          column(
-            width = 2,
-            actionButton("AddSet", "Add Set", style = 'margin-top:25px; color: white; background-color: #28A745; border-color: #28A745;'),
-          ),
-          column(
-            width = 2,
-            actionButton("EditSet", "Edit Set", style = 'margin-top:25px; color: white; background-color: #6C757D; border-color: #6C757D;'),
-          ),
-          column(
-            width = 2,
-            actionButton("DeleteSet", "Delete Set", style = 'margin-top:25px; color: white; background-color: #DC3545; border-color: #DC3545;'),
+          fluidRow(column(width = 12,
+                          plotlyOutput("PlotMaxLifts"),
+                          selectInput("SelectFrequency", "Frequency", choices=c("Monthly", "Weekly", "Daily")))
           ),
         ),
-        
-        fluidRow(
-          column(
-            width = 12,
-            downloadButton("DownloadData", "Download Data"),
-          )
-        ),
-        
-        fluidRow(column(
-          width = 12,
-          h2("Today"),
-          DTOutput("FactSetsToday")
-        )),
-        
-        fluidRow(column(
-          width = 12,
-          h2("Historical"),
-          DTOutput("FactSetAll")
-        ))
       ),
       
-      tabItem(tabName = TabNames[2],
+      tabItem(
+        tabName = TabNames[2],
+        fluidRow(
+          column(12,
+                 h2("Data"),
+                 p("Note that Load is in pounds (lbs) and is converted to kg."),
+                 )
+        ),
+        
+        # wendler Panel 
+        panel(
+          
+        fluidRow(
+          column(8,
+                 h4("Wendler 531 Reference Table"),
+                 p("Reference Lifts for Wendler Proportions (Updated automatically based on max lifts)."),
+          ),
+          column(2,
+                 selectInput("WendlerWeek", "Current Week:", choices = 1:4, selected = getWeek()),
+          ),
+          column(2,
+                 selectInput("WendlerExercise", "Exercise:", choices = c('Deadlift', 'Squat', 'Bench', 'Press'), selected = getWeek()),
+          )
+          ),
+          
+          fluidRow(
+            column(
+              width=12,
+              DTOutput("WendlerTable"),
+            )
+            )
+        ),
+        
+        # input panel
+        panel(
+          fluidRow(
+            column(12,
+            h4("Input Table"),
+            )
+          ),
+          
+          fluidRow(
+            column(width = 2,
+                   dateInput("Date", "Date", value = Sys.Date()),),
+            column(width = 2,
+                   selectInput(
+                     "Exercise",
+                     "Exercise",
+                     choices = c(
+                       "Deadlift",
+                       "Squat",
+                       "Bench",
+                       "Press",
+                       "Row",
+                       "Abs",
+                       "Bicep Curl",
+                       "Tricep Extension"
+                     )
+                   )),
+            column(width = 2,
+                   numericInput("Load", "Load", value = 0), ),
+            column(width = 2,
+                   numericInput("RepTarget", "Rep Target", value = 0), ),
+            column(width = 2,
+                   numericInput("RepActual", "Rep Actual", value = 0), ),
+            column(width = 2,
+                   
+                   textInput("Note", "Note"), ),
+          ),
+          
+          
+          fluidRow(
+            column(
+              width = 2,
+              numericInput("SelectSetId", "Select Id to Edit or Delete", value = -1),
+            ),
+            column(
+              width = 2,
+              actionButton("AddSet", "Add Set", style = 'margin-top:25px; color: white; background-color: #28A745; border-color: #28A745;'),
+            ),
+            column(
+              width = 2,
+              actionButton("EditSet", "Edit Set", style = 'margin-top:25px; color: white; background-color: #FFA500; border-color: #FFA500;'),
+            ),
+            column(
+              width = 2,
+              actionButton("DeleteSet", "Delete Set", style = 'margin-top:25px; color: white; background-color: #DC3545; border-color: #DC3545;'),
+            ),
+            column(
+              width = 4,
+              downloadButton("DownloadData", "Download Data", style = 'margin-top:25px; color: #000000; background-color: #00FF00; border-color: #00FF00;'),
+            ),
+          ),
+        ),
+        
+        # data table 
+        panel(
+          fluidRow(column(12,
+                   h4("Sets Table"),
+          )
+          ),
+          fluidRow(column(
+            width = 12,
+            DTOutput("FactSetAll")
+          ))
+        ),
+
+      ),
+      
+      tabItem(tabName = TabNames[3],
               
               fluidRow(
-                column(
-                  width = 12,
-                  h1("Plate Reference Guide"),
-                  downloadButton("DownloadDimData", "Download Data"),
-                  h1(""),
-                  DTOutput("DimPlate")
+                column(7,
+                       h2("Plate Reference Guide"),
+                       ),
+                column(5,
+                       downloadButton("DownloadDimData", "Download Data", style = 'margin-top:25px; color: #000000; background-color: #00FF00; border-color: #00FF00;'),
                 )
-              )),
+              ),
+              panel(
+                
+                fluidRow(
+                  column(
+                    width = 12,
+                    DTOutput("DimPlate")
+                  )
+                )
+              )
+              ),
       
       # exercise
-      tabItem(tabName = TabNames[3],
+      tabItem(tabName = TabNames[4],
               
               fluidRow(column(
                 width = 12,
@@ -250,7 +321,7 @@ ui <- dashboardPage(
       
       # measures
       tabItem(
-        tabName = TabNames[4],
+        tabName = TabNames[5],
         
         fluidRow(column(width = 2,
                         h1("Measures"))
@@ -305,6 +376,7 @@ ui <- dashboardPage(
           column(width = 2,
                  numericInput("Steps", "Steps", value = 0)),
         ),
+        
         fluidRow(
           
           column(
@@ -333,7 +405,6 @@ ui <- dashboardPage(
         fluidRow(column(width = 12,
                         DTOutput("FactMeasureAll")))
       )
-      #-----------------------------------------------------------------
     )
   )
 )
@@ -351,24 +422,33 @@ server <- function(input, output) {
   FactSet <- reactiveVal(read.csv("data/FactSet.csv"))
   FactMeasure <- reactiveVal(read.csv("data/FactMeasure.csv"))
   
+  observeEvent(input$WendlerWeek, {
+    setWeek(input$WendlerWeek)
+  })
+  
   output$BoxDeadliftMax <- renderValueBox({
+    
     valueBox(
-      value = round_to_nearest_5(round((max(
-        FactSet()$Load[FactSet()$Exercise == "Deadlift"], na.rm = T
-      )) / 2.2, 0)),
-      subtitle = "Deadlift Max (KG)",
+      value = (
+        "Deadlift"
+        ),
+      subtitle =         paste0(
+        (max(FactSet()$Load[FactSet()$Exercise == "Deadlift"], na.rm = T)), 
+        " lbs (", round((max(FactSet()$Load[FactSet()$Exercise == "Deadlift"], na.rm = T)) / 2.2, 2), " kg)"),
       color = "blue",
       icon = icon("arrow-up")
-      
     )
   })
   
   output$BoxSquatMax <- renderValueBox({
     valueBox(
-      value = round_to_nearest_5(round((max(
-        FactSet()$Load[FactSet()$Exercise == "Squat"], na.rm = T
-      )) / 2.2, 0)),
-      subtitle = "Squat Max (KG)",
+      value = (
+        "Squat"
+    ),
+      subtitle =         paste0(
+        (max(FactSet()$Load[FactSet()$Exercise == "Squat"], na.rm = T)), 
+        " lbs (", round((max(FactSet()$Load[FactSet()$Exercise == "Squat"], na.rm = T)) / 2.2, 2), " kg)"
+      ),
       color = "red",
       icon = icon("arrow-up")
     )
@@ -376,10 +456,13 @@ server <- function(input, output) {
   
   output$BoxBenchMax <- renderValueBox({
     valueBox(
-      value = round_to_nearest_5(round((max(
-        FactSet()$Load[FactSet()$Exercise == "Bench"], na.rm = T
-      )) / 2.2, 0)),
-      subtitle = "Bench Max (KG)",
+      value = (
+        "Bench"
+      ),
+      subtitle = paste0(
+        (max(FactSet()$Load[FactSet()$Exercise == "Bench"], na.rm = T)), 
+        " lbs (", round((max(FactSet()$Load[FactSet()$Exercise == "Bench"], na.rm = T)) / 2.2, 2), " kg)"
+      ),
       color = "orange",
       icon = icon("arrow-up")
     )
@@ -387,10 +470,13 @@ server <- function(input, output) {
   
   output$BoxPressMax <- renderValueBox({
     valueBox(
-      value = round_to_nearest_5(round((max(
-        FactSet()$Load[FactSet()$Exercise == "Press"], na.rm = T
-      )) / 2.2, 0)),
-      subtitle = "Press Max (KG)",
+      value = (
+        "Press"
+      ),
+      subtitle = paste0(
+        (max(FactSet()$Load[FactSet()$Exercise == "Press"], na.rm = T)), 
+        " lbs (", round((max(FactSet()$Load[FactSet()$Exercise == "Press"], na.rm = T)) / 2.2, 2), " kg)"
+      ),
       color = "green",
       icon = icon("arrow-up")
     )
@@ -434,13 +520,65 @@ server <- function(input, output) {
   
   output$FactSetAll <- renderDT({
     Results <-
-      FactSet() %>% arrange(desc(Id)) %>% filter(Date != Sys.Date())
+      FactSet() %>% arrange(desc(Id))
+    
     datatable(
       Results,
+      rownames = FALSE,
+      selection = 'single',
+      editable = FALSE,
+      options = list(
+        scrollY = '350px',
+        scrollX = FALSE,
+        paging = FALSE,
+        columnDefs = list(list(className = "nowrap", targets = "_all"))
+        ),
+    )
+    
+  })
+  
+  output$WendlerTable <- renderDT({
+    
+    ResultsReps <- data.frame(Set = c(1,2,3), Week1 = c(5,5,5), Week2 = c(3,3,3), Week3 = c(5,3,1), Week4 = c(5,5,5))
+    
+    ResultsDeadlift <- WendlerCalc(max(FactSet()$Load[FactSet()$Exercise == "Deadlift"], na.rm = T)) %>% mutate(Exercise = "Deadlift", Set = c(1,2,3))
+    ResultsSquat    <- WendlerCalc(max(FactSet()$Load[FactSet()$Exercise == "Squat"], na.rm = T)) %>% mutate(Exercise = "Squat", Set = c(1,2,3))
+    ResultsBench    <- WendlerCalc(max(FactSet()$Load[FactSet()$Exercise == "Bench"], na.rm = T)) %>% mutate(Exercise = "Bench", Set = c(1,2,3))
+    ResultsPress    <- WendlerCalc(max(FactSet()$Load[FactSet()$Exercise == "Press"], na.rm = T)) %>% mutate(Exercise = "Press", Set = c(1,2,3))
+    
+    Results <- rbind(ResultsDeadlift, ResultsSquat, ResultsBench, ResultsPress)
+    
+    Results <- Results %>%
+      pivot_longer(
+        cols = starts_with("Week"), 
+        names_to = "Week", 
+        values_to = "Load"
+      )
+    
+    ResultsReps <- ResultsReps %>%
+      pivot_longer(
+        cols = starts_with("Week"), 
+        names_to = "Week", 
+        values_to = "Repetitions"
+      )
+    
+    Results <- Results %>% left_join(ResultsReps)
+    
+    DimPlateMin <- DimPlate %>% select(Load, starts_with('Plate'))
+    
+    Results <- Results %>% left_join(DimPlateMin) %>% 
+      mutate(Week = as.numeric(str_replace(Week, "Week", ""))) %>% 
+      select(Exercise, Week, Set, everything())
+    
+    Results <- Results %>% filter(Week == input$WendlerWeek & Exercise == input$WendlerExercise)
+    
+    datatable(
+      Results, 
       editable = TRUE,
-      options = list(pageLength = 20),
+      options = list(pageLength = -1),
       rownames = FALSE
     )
+    
   })
   
   output$FactMeasureAll <- renderDT({
@@ -456,12 +594,23 @@ server <- function(input, output) {
   
   
   output$DimPlate <- renderDT({
-    datatable(DimPlate,
-              options = list(pageLength = -1),
-              rownames = FALSE)
+    
+    datatable(
+      DimPlate,
+      rownames = FALSE,
+      selection = 'single',
+      editable = FALSE,
+      options = list(
+        scrollY = '600px',
+        scrollX = FALSE,
+        paging = FALSE,
+        columnDefs = list(list(className = "nowrap", targets = "_all"))
+      ),
+    )
+
   })
   
-  output$PlotMaxLifts <- renderPlot({
+  output$PlotMaxLifts <- renderPlotly({
     FactSet <- FactSet()
     
     FactSet$Date <- as.Date(FactSet$Date, format = "%Y-%m-%d")
@@ -494,15 +643,15 @@ server <- function(input, output) {
         rename("Time" = "Day")
     }
     
-    ggplot(Results,
+    p <- ggplot(Results,
            aes(
              x = Time,
              y = Max_Load,
              color = Exercise,
              group = Exercise
            )) +
-      geom_line(linewidth=2) +
-      geom_point(size=3) +
+      geom_line(linewidth=1) +
+      geom_point(size=2) +
       labs(title = "Max Load by Exercise", x = as.character(input$SelectFrequency), y = "Max Load") +
       theme_classic() +
       theme(axis.text.x = element_text(angle = 270, hjust = 1)) +
@@ -511,7 +660,9 @@ server <- function(input, output) {
         "Squat" = "red",
         "Bench" = "orange",
         "Press" = "green"
-      )) + geom_text(aes(label = round_to_nearest_5(Max_Load)), vjust = -1)
+      ))
+    
+    ggplotly(p)
     
   })
   
@@ -543,7 +694,7 @@ server <- function(input, output) {
   )
   
   observeEvent(input$AddMeasure, {
-    new_id <- max(FactMeasure()$Id) + 1
+    new_id <- (max(FactMeasure()$Id, na.rm = T) + 1)
     Date = as.character(input$MDate)
     new_entry <-
       data.frame(

@@ -1,0 +1,134 @@
+
+:root {
+--c1-color: #05445E;
+--c2-color: #189AB4;
+--c3-color: #75E6DA;
+--c4-color: #D4F1F4;
+--c5-color: #edf8fb;
+}
+
+/* logo */
+.skin-blue .main-header .logo {
+background-color: var(--c1-color);
+color: var(--c5-color);
+}
+
+/* logo when hovered */
+.skin-blue .main-header .logo:hover {
+background-color: var(--c1-color);
+color: var(--c2-color);
+}
+
+/* navbar (rest of the header) */
+.skin-blue .main-header .navbar {
+background-color: var(--c1-color);
+}    
+
+
+/* navbar buttons */
+.skin-blue .main-header .navbar .nav>li>a {
+color: var(--c2-color);
+background-color: var(--c1-color);
+}
+
+.skin-blue .main-header .navbar .nav>li>a:hover{
+background-color: var(--c1-color);
+color: var(--c2-color);
+}
+
+.skin-blue .main-header .navbar .nav .open>a:focus{
+background-color: var(--c1-color);
+}     
+
+/* main sidebar */
+.skin-blue .main-sidebar {
+background-color: var(--c1-color);
+}
+
+/* active selected tab in the sidebarmenu */
+.skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
+background-color: var(--c2-color);
+color: var(--c1-color);
+}
+
+/* other links in the sidebarmenu */
+.skin-blue .main-sidebar .sidebar .sidebar-menu a{
+background-color: var(--c1-color);
+color: var(--c5-color);
+}
+
+/* other links in the sidebarmenu when hovered */
+.skin-blue .main-sidebar .sidebar .sidebar-menu a:hover{
+background-color: var(--c2-color);
+}
+/* toggle button when hovered  */                    
+.skin-blue .main-header .navbar .sidebar-toggle:hover{
+background-color: var(--c2-color);
+}
+/* body */
+.content-wrapper, .right-side {
+background-color: var(--c5-color);
+}
+
+                
+/* Icons and Icon borders */
+.far {
+font-size: 2.3rem;
+}
+.fab {
+font-size: 2.3rem;
+}
+.fas {
+font-size: 2.3rem;
+}
+
+h3 {
+color: var(--c5-color);
+}
+
+.fasdownload {
+font-size: 2.3rem;
+padding: 0px;
+border: 0px;
+}
+
+/* buttons */
+.btn {
+padding-left: 20px;
+padding-right: 20px;
+box-shadow: 0 4px 4px rgba(0, 0, 0, .3);
+}
+
+.btn:active:focus {
+box-shadow: 0px 4px 4px rgba(0, 0, 0, .3);
+transform: translateY(3px);
+}
+
+.Reactable {
+margin-top: 10px;
+}
+
+.panel {
+margin-bottom: 0px;
+}
+
+.panel-body {
+box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3);
+}
+
+.panel-body2 {
+box-shadow: 0px 0px 4px 0px rgba(118, 166, 255, 1);
+}
+
+.parent-container {
+background-color: var(--c5-color);
+}
+
+/* Styling for the shiny info box */
+.info-box {
+width: 300px;
+height: 200px;
+background-color:  var(--c5-color);
+color: var(--c5-color);
+box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}

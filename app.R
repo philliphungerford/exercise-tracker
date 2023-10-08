@@ -76,6 +76,15 @@ setWeek <- function(week) {
   write.csv(data.frame(week = week), "data/FactWeek.csv", row.names = FALSE)
 }
 
+getExercise <- function() {
+  exercise_data <- read.csv("data/FactExercise.csv")
+  return(exercise_data$exercise)
+}
+
+setExercise <- function(exercise) {
+  write.csv(data.frame(exercise = exercise), "data/FactExercise.csv", row.names = FALSE)
+}
+
 ##############################################################################
 # TAB 1: USER INTERFACE
 ##############################################################################
@@ -173,13 +182,13 @@ ui <- dashboardPage(
         fluidRow(
           column(8,
                  h4("Wendler 531 Reference Table"),
-                 p("Reference Lifts for Wendler Proportions (Updated automatically based on max lifts)."),
+                 p("Reference Lifts for Wendler Proportions (Updated automatically based on max lifts). Select the week you are in and the lift you are doing for the day."),
           ),
           column(2,
                  selectInput("WendlerWeek", "Current Week:", choices = 1:4, selected = getWeek()),
           ),
           column(2,
-                 selectInput("WendlerExercise", "Exercise:", choices = c('Deadlift', 'Squat', 'Bench', 'Press'), selected = getWeek()),
+                 selectInput("WendlerExercise", "Exercise:", choices = c('Deadlift', 'Squat', 'Bench', 'Press'), selected = getExercise()),
           )
           ),
           
@@ -200,9 +209,13 @@ ui <- dashboardPage(
           ),
           
           fluidRow(
+            column(
+              width = 1,
+              numericInput("SelectSetId", "Id", value = 0),
+            ),
             column(width = 2,
                    dateInput("Date", "Date", value = Sys.Date()),),
-            column(width = 2,
+            column(width = 1,
                    selectInput(
                      "Exercise",
                      "Exercise",
@@ -215,41 +228,30 @@ ui <- dashboardPage(
                        "Abs",
                        "Bicep Curl",
                        "Tricep Extension"
-                     )
+                     ),
+                     selected = getExercise()
                    )),
-            column(width = 2,
+            column(width = 1,
                    numericInput("Load", "Load", value = 0), ),
-            column(width = 2,
+            column(width = 1,
                    numericInput("RepTarget", "Rep Target", value = 0), ),
-            column(width = 2,
+            column(width = 1,
                    numericInput("RepActual", "Rep Actual", value = 0), ),
             column(width = 2,
-                   
                    textInput("Note", "Note"), ),
-          ),
-          
-          
-          fluidRow(
             column(
-              width = 2,
-              numericInput("SelectSetId", "Select Id to Edit or Delete", value = -1),
-            ),
-            column(
-              width = 2,
+              width = 1,
               actionButton("AddSet", "Add Set", style = 'margin-top:25px; color: white; background-color: #28A745; border-color: #28A745;'),
             ),
             column(
-              width = 2,
+              width = 1,
               actionButton("EditSet", "Edit Set", style = 'margin-top:25px; color: white; background-color: #FFA500; border-color: #FFA500;'),
             ),
             column(
-              width = 2,
+              width = 1,
               actionButton("DeleteSet", "Delete Set", style = 'margin-top:25px; color: white; background-color: #DC3545; border-color: #DC3545;'),
             ),
-            column(
-              width = 4,
-              downloadButton("DownloadData", "Download Data", style = 'margin-top:25px; color: #000000; background-color: #00FF00; border-color: #00FF00;'),
-            ),
+
           ),
         ),
         
@@ -257,12 +259,19 @@ ui <- dashboardPage(
         panel(
           fluidRow(column(12,
                    h4("Sets Table"),
-          )
+          ),
           ),
           fluidRow(column(
             width = 12,
             DTOutput("FactSetAll")
-          ))
+          )
+          ),
+          fluidRow(
+            column(
+              width = 12,
+              downloadButton("DownloadData", "Download", style = 'margin-top:25px; color: #000000; background-color: #00FF00; border-color: #00FF00;'),
+            ),
+          )
         ),
 
       ),
@@ -273,9 +282,6 @@ ui <- dashboardPage(
                 column(7,
                        h2("Plate Reference Guide"),
                        ),
-                column(5,
-                       downloadButton("DownloadDimData", "Download Data", style = 'margin-top:25px; color: #000000; background-color: #00FF00; border-color: #00FF00;'),
-                )
               ),
               panel(
                 
@@ -283,6 +289,9 @@ ui <- dashboardPage(
                   column(
                     width = 12,
                     DTOutput("DimPlate")
+                  ),
+                  column(5,
+                         downloadButton("DownloadDimData", "Download Data", style = 'margin-top:25px; color: #000000; background-color: #00FF00; border-color: #00FF00;'),
                   )
                 )
               )
@@ -418,12 +427,17 @@ ui <- dashboardPage(
 ##############################################################################
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+  
   DimPlate <- read.csv("data/DimPlate.csv")
   FactSet <- reactiveVal(read.csv("data/FactSet.csv"))
   FactMeasure <- reactiveVal(read.csv("data/FactMeasure.csv"))
   
   observeEvent(input$WendlerWeek, {
     setWeek(input$WendlerWeek)
+  })
+  
+  observeEvent(input$WendlerExercise, {
+    setExercise(input$WendlerExercise)
   })
   
   output$BoxDeadliftMax <- renderValueBox({
@@ -500,27 +514,29 @@ server <- function(input, output) {
     write.csv(FactSet(), "data/FactSet.csv", row.names = FALSE)
   })
   
-  observeEvent(input$DeleteSet, {
-    updated_data <- FactSet()[!FactSet()$Id == input$SelectSetId, ]
-    FactSet(updated_data)
-    write.csv(FactSet(), "data/FactSet.csv", row.names = FALSE)
-  })
+  # observeEvent(input$DeleteSet, {
+  #   updated_data <- FactSet()[!FactSet()$Id == input$SelectSetId, ]
+  #   FactSet(updated_data)
+  #   write.csv(FactSet(), "data/FactSet.csv", row.names = FALSE)
+  # })
   
-  output$FactSetsToday <- renderDT({
-    Results <-
-      FactSet() %>% arrange(desc(Id))
+  observeEvent(input$DeleteSet, {
     
-    datatable(
-      Results[Results$Date == Sys.Date(), ],
-      editable = TRUE,
-      options = list(pageLength = -1),
-      rownames = FALSE
-    )
+    sel <- input$FactSetAll_rows_selected  # Get selected row
+    
+    if (length(sel) > 0) {
+      curr_data <- FactSet()
+      curr_data <- curr_data[-sel, ]  # Remove the selected row
+      FactSet(curr_data)  # Update the reactive data
+      
+      # Write the updated data back to the CSV file
+      write.csv(curr_data, "data/FactSet.csv", row.names = FALSE)
+    }
   })
   
   output$FactSetAll <- renderDT({
     Results <-
-      FactSet() %>% arrange(desc(Id))
+      FactSet()
     
     datatable(
       Results,
@@ -528,10 +544,15 @@ server <- function(input, output) {
       selection = 'single',
       editable = FALSE,
       options = list(
-        scrollY = '350px',
+        scrollY = '500px',
         scrollX = FALSE,
         paging = FALSE,
-        columnDefs = list(list(className = "nowrap", targets = "_all"))
+        columnDefs = list(list(className = "nowrap", targets = "_all")),
+        initComplete = JS(
+          "function(settings, json) {",
+          "$(this.api().table().node()).closest('.dataTables_scrollBody').scrollTop($(this.api().table().node()).height());",
+          "}"
+        )
         ),
     )
     
@@ -573,10 +594,16 @@ server <- function(input, output) {
     Results <- Results %>% filter(Week == input$WendlerWeek & Exercise == input$WendlerExercise)
     
     datatable(
-      Results, 
-      editable = TRUE,
-      options = list(pageLength = -1),
-      rownames = FALSE
+      Results,
+      rownames = FALSE,
+      selection = 'single',
+      editable = FALSE,
+      options = list(
+        scrollY = '110px',
+        scrollX = FALSE,
+        paging = FALSE,
+        columnDefs = list(list(className = "nowrap", targets = "_all"))
+      ),
     )
     
   })

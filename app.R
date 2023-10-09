@@ -67,22 +67,22 @@ WendlerCalc <- function(MaxWeight){
 
 # Function to get the current week number from the CSV file
 getWeek <- function() {
-  week_data <- read.csv("data/FactWeek.csv")
+  week_data <- read.csv("data/ParameterWeek.csv")
   return(week_data$week)
 }
 
 # Function to set the current week number in the CSV file
 setWeek <- function(week) {
-  write.csv(data.frame(week = week), "data/FactWeek.csv", row.names = FALSE)
+  write.csv(data.frame(week = week), "data/ParameterWeek.csv", row.names = FALSE)
 }
 
 getExercise <- function() {
-  exercise_data <- read.csv("data/FactExercise.csv")
+  exercise_data <- read.csv("data/ParameterExercise.csv")
   return(exercise_data$exercise)
 }
 
 setExercise <- function(exercise) {
-  write.csv(data.frame(exercise = exercise), "data/FactExercise.csv", row.names = FALSE)
+  write.csv(data.frame(exercise = exercise), "data/ParameterExercise.csv", row.names = FALSE)
 }
 
 ##############################################################################

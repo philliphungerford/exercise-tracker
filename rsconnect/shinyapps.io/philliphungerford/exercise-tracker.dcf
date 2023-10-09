@@ -5,8 +5,9 @@ account: philliphungerford
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 9661337
-bundleId: 7771142
+bundleId: 7778147
 url: https://philliphungerford.shinyapps.io/exercise-tracker/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: _archive/FactMeasure_2023-08-24_.csv|_archive/FactSet_2023-08-23_.csv

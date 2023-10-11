@@ -209,13 +209,9 @@ ui <- dashboardPage(
           ),
           
           fluidRow(
-            column(
-              width = 1,
-              numericInput("SelectSetId", "Id", value = 0),
-            ),
             column(width = 2,
                    dateInput("Date", "Date", value = Sys.Date()),),
-            column(width = 1,
+            column(width = 2,
                    selectInput(
                      "Exercise",
                      "Exercise",
@@ -237,7 +233,7 @@ ui <- dashboardPage(
                    numericInput("RepTarget", "Rep Target", value = 0), ),
             column(width = 1,
                    numericInput("RepActual", "Rep Actual", value = 0), ),
-            column(width = 2,
+            column(width = 3,
                    textInput("Note", "Note"), ),
             column(
               width = 1,
@@ -247,11 +243,6 @@ ui <- dashboardPage(
               width = 1,
               actionButton("EditSet", "Edit Set", style = 'margin-top:25px; color: white; background-color: #FFA500; border-color: #FFA500;'),
             ),
-            column(
-              width = 1,
-              actionButton("DeleteSet", "Delete Set", style = 'margin-top:25px; color: white; background-color: #DC3545; border-color: #DC3545;'),
-            ),
-
           ),
         ),
         
@@ -532,6 +523,8 @@ server <- function(input, output) {
       # Write the updated data back to the CSV file
       write.csv(curr_data, "data/FactSet.csv", row.names = FALSE)
     }
+    removeModal()
+    
   })
   
   output$FactSetAll <- renderDT({
@@ -555,6 +548,74 @@ server <- function(input, output) {
         )
         ),
     )
+    
+  })
+  
+  ## Edit Publication Modal
+  
+  observeEvent(input$EditSet, {
+    
+    SelectedRow <- input$FactSetAll_rows_selected
+    
+    if (length(SelectedRow) == 0) {
+      showNotification("No row selected.")
+      return()
+    }
+    
+    EditData <- FactSet()[SelectedRow, , drop = FALSE]
+    
+    showModal(
+      modalDialog(
+        title = "Edit Set",
+        h4(paste0("ID: "), EditData$Id),
+        dateInput("editDate","Set Date:", value = as.character(EditData$Date)),
+        selectInput("editExercise","Exercise", choices = c(
+          "Deadlift",
+          "Squat",
+          "Bench",
+          "Press",
+          "Row",
+          "Abs",
+          "Bicep Curl",
+          "Tricep Extension"
+        ), selected = EditData$Exercise),
+        numericInput("editLoad", "Load", value = EditData$Load),
+        numericInput("editRepTarget", "RepTarget", value = EditData$RepTarget),
+        numericInput("editRepActual", "RepActual", value = EditData$RepActual),
+        textInput("editNote","Note",value = EditData$Note),
+        footer = tagList(
+          actionButton("btn_update", "Update", class = "btn-success", style = "color: white;"),
+          actionButton("DeleteSet", "Delete Set", class = "btn-danger" ,style =  "color: white;"),
+          modalButton("Cancel")
+        )
+      )
+    )
+  })
+  
+  
+  observeEvent(input$btn_update, {
+    
+    SelectedRow <- input$FactSetAll_rows_selected
+    
+    if (length(SelectedRow) == 0) {
+      showNotification("No publication selected.")
+      return()
+    }
+    
+    tmp <- FactSet()
+    
+    tmp[SelectedRow, "Date"] <-  as.character(input$editDate)
+    tmp[SelectedRow, "Day"] <-  weekdays(input$editDate)
+    tmp[SelectedRow, "Exercise"]<-  input$editExercise
+    tmp[SelectedRow, "Load"] <-  input$editLoad
+    tmp[SelectedRow, "RepTarget"] <-  input$editRepTarget
+    tmp[SelectedRow, "RepActual"] <-  input$editRepActual
+    tmp[SelectedRow, "Note"] <-  input$editNote
+    
+    # write csv
+    FactSet(tmp)
+    write.csv(tmp, "data/FactSet.csv", row.names = FALSE)
+    removeModal()
     
   })
   
@@ -604,7 +665,8 @@ server <- function(input, output) {
         paging = FALSE,
         columnDefs = list(list(className = "nowrap", targets = "_all"))
       ),
-    )
+    ) %>%
+      formatStyle(columns = c('Plate_2_5', 'Plate_5', 'Plate_10', 'Plate_25', 'Plate_35', 'Plate_45'), backgroundColor = 'lightgrey')
     
   })
   
@@ -865,19 +927,19 @@ server <- function(input, output) {
     write.csv(FactMeasure(), "data/FactMeasure.csv", row.names = FALSE)
   })
   
-  
-  observeEvent(input$EditSet, {
-    edited_data <- FactSet()
-    edited_data[input$SelectSetId, "Date"]      <- as.character(input$Date)
-    edited_data[input$SelectSetId, "Exercise"]  <- input$Exercise
-    edited_data[input$SelectSetId, "Load"]      <- input$Load
-    edited_data[input$SelectSetId, "RepTarget"] <- input$RepTarget
-    edited_data[input$SelectSetId, "RepActual"] <- input$RepActual
-    edited_data[input$SelectSetId, "Note"]      <- input$Note
-    FactSet(edited_data)
-    write.csv(FactSet(), "data/FactSet.csv", row.names = FALSE)
-  })
-  
+  # 
+  # observeEvent(input$EditSet, {
+  #   edited_data <- FactSet()
+  #   edited_data[input$SelectSetId, "Date"]      <- as.character(input$Date)
+  #   edited_data[input$SelectSetId, "Exercise"]  <- input$Exercise
+  #   edited_data[input$SelectSetId, "Load"]      <- input$Load
+  #   edited_data[input$SelectSetId, "RepTarget"] <- input$RepTarget
+  #   edited_data[input$SelectSetId, "RepActual"] <- input$RepActual
+  #   edited_data[input$SelectSetId, "Note"]      <- input$Note
+  #   FactSet(edited_data)
+  #   write.csv(FactSet(), "data/FactSet.csv", row.names = FALSE)
+  # })
+  # 
   output$DataSelectedExercise <- renderDT({
     
     SelectedExercise <- input$ExerciseBreakdown

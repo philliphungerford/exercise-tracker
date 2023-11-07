@@ -1,4 +1,5 @@
 /*============================================================================*/
+
 /* logo */
 .skin-blue .main-header .logo {
               background-color: #002664;
@@ -14,11 +15,11 @@
 .skin-blue .main-header .navbar {
               background-color: #002664;
               }
-/* body */
+/* body background */
 .content-wrapper, .right-side {
-              background-color: #FFFFFF;
-              padding-left: 40px;
-              padding-right: 40px
+              background-color: #F2F3F4;
+              padding-left: 5px;
+              padding-right: 5px
               }
 /* box */
 .panel {
@@ -95,3 +96,13 @@ height: 95vh !important;
   box-shadow: 0 1px 1px rgba(0,0,0,.1);
 }
 /*============================================================================*/
+
+/* Style for the modal overlay */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5); /* Background color with some transparency */
+}
+
+/* Style for the modal content */
+.modal-content {
+  background-color: #FFFFFF; /* Background color of the modal content */
+}

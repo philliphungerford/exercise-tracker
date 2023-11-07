@@ -39,9 +39,7 @@ github_link  <-
 website_link <- 'https://philliphungerford.github.io'
 
 # Tab Names
-TabNames <- c(
-              "WeightLifting"
-             )
+TabNames <- c("WeightLifting")
 
 round_to_nearest_5 <- function(x) {
   rounded <- round(x / 5) * 5
@@ -86,6 +84,8 @@ setExercise <- function(exercise) {
             row.names = FALSE)
 }
 
+ChoicesExercise <- read.csv("data/DimExercises.csv")[,2]
+
 ##############################################################################
 # TAB 1: USER INTERFACE
 ##############################################################################
@@ -97,7 +97,7 @@ ui <- dashboardPage(
   # MAIN TITLE
   dashboardHeader(
     title =  "Health Tracker",
-    titleWidth = 300,
+    titleWidth = 150,
     tags$li(
       class = "dropdown",
       tags$a(
@@ -120,12 +120,16 @@ ui <- dashboardPage(
   #=========================================================================
   ## Sidebar content
   dashboardSidebar(
+    width=150,
     collapsed = TRUE,
-    includeCSS("./www/mytheme.css"),
-    sidebarMenu(
-    # icons from (https://fontawesome.com/v4.7.0/icons/)
-    menuItem(TabNames[1], tabName = TabNames[1], icon = icon("universal-access"))
-  )),
+   includeCSS("./www/mytheme.css"),
+    sidebarMenu(# icons from (https://fontawesome.com/v4.7.0/icons/)
+      menuItem(
+        TabNames[1],
+        tabName = TabNames[1],
+        icon = icon("universal-access")
+      ))
+  ),
   #=========================================================================
   ## Body content
   
@@ -145,108 +149,103 @@ ui <- dashboardPage(
           br(),
           br(),
           actionButton("btn_summary", "Summary", class = "btn-success", style = "color: white;"),
-          actionButton("btn_ref_plate", "Plate Reference", style = "background-color: grey; color: black;"),
-        )
+          actionButton("btn_ref_plate", "Plate Reference", style = "background-color: grey; color: white;"),
+          actionButton("btn_1rm", "Rep Calculator")
+        ),
+        p()
       )),
-      
-      # wendler Panel
-      panel(fluidRow(
-        column(
-          8,
-          h4("Wendler 531 Reference Table"),
-          p(
-            "Reference Lifts for Wendler Proportions (Updated automatically based on max lifts). Select the week you are in and the lift you are doing for the day."
-          ),
-        ),
-        column(
-          2,
-          selectInput(
-            "WendlerWeek",
-            "Current Week:",
-            choices = 1:4,
-            selected = getWeek()
-          ),
-        ),
-        column(
-          2,
-          selectInput(
-            "WendlerExercise",
-            "Exercise:",
-            choices = c('Deadlift', 'Squat', 'Bench', 'Press'),
-            selected = getExercise()
-          ),
-        )
-      ),
-      
-      fluidRow(column(
-        width = 12,
-        DTOutput("WendlerTable"),
-      ))),
-      
-      # input panel
-      panel(
-        fluidRow(column(12,
-                        h4("Input Set"),)),
-        
-        fluidRow(
-          column(width = 2,
-                 dateInput("Date", "Date", value = Sys.Date()), ),
-          column(
-            width = 2,
-            selectInput(
-              "Exercise",
-              "Exercise",
-              choices = c(
-                "Deadlift",
-                "Squat",
-                "Bench",
-                "Press",
-                "Row",
-                "Abs",
-                "Bicep Curl",
-                "Tricep Extension"
+      #-------------------------------------------------------------------------
+      # Wendler Panel
+      fluidRow(
+        box(width=12, collapsible = TRUE, collapsed = TRUE, title = "Wendler 531 Reference Table",class = "custom-box",
+            
+            #--
+            fluidRow(
+              column(
+                8,
+                p(
+                  "Reference Lifts for Wendler Proportions (Updated automatically based on max lifts). Select the week you are in and the lift you are doing for the day. This tracks main lifts/movements and does not include accessory lifts."
+                ),
               ),
-              selected = getExercise()
-            )
-          ),
-          column(width = 1,
-                 numericInput("Load", "Load", value = 0),),
-          column(width = 1,
-                 numericInput("RepTarget", "Rep Target", value = 0),),
-          column(width = 1,
-                 numericInput("RepActual", "Rep Actual", value = 0),),
-          column(width = 3,
-                 textInput("Note", "Note"),),
-          
-          column(2,
-                 
-            div(
-              class = "text-right",
-              actionButton("AddSet", "Add Set", style = 'margin-top:25px; color: white; background-color: #28A745; border-color: #28A745;'),
-              actionButton("EditSet", "Edit Set", style = 'margin-top:25px; color: white; background-color: #FFA500; border-color: #FFA500;'),
+              column(
+                2,
+                selectInput(
+                  "WendlerWeek",
+                  "Current Week:",
+                  choices = 1:4,
+                  selected = getWeek()
+                ),
+              ),
+              column(
+                2,
+                selectInput(
+                  "WendlerExercise",
+                  "Exercise:",
+                  choices = c('Deadlift', 'Squat', 'Bench', 'Press'),
+                  selected = getExercise()
+                ),
+              )
             ),
             
-          ),
-        ),
+            fluidRow(column(width = 12,
+                            DTOutput("WendlerTable"),)),
+            #--
+            )
       ),
-      
+
+      #-------------------------------------------------------------------------
+      fluidRow(
+        box(width=12, collapsible = TRUE, collapsed = FALSE, title = "Input Set", class = "custom-box", 
+            #--
+            fluidRow(
+              column(width = 2,
+                     dateInput("Date", "Date", value = Sys.Date()),),
+              column(
+                width = 2,
+                selectInput(
+                  "Exercise",
+                  "Exercise",
+                  choices = ChoicesExercise,
+                  selected = getExercise()
+                )
+              ),
+              column(width = 1,
+                     numericInput("Load", "Load", value = 0), ),
+              column(width = 1,
+                     numericInput("RepTarget", "Rep Target", value = 0), ),
+              column(width = 1,
+                     numericInput("RepActual", "Rep Actual", value = 0), ),
+              column(width = 3,
+                     textInput("Note", "Note"), ),
+              
+              column(2,
+                     
+                     div(
+                       class = "text-right",
+                       actionButton("AddSet", "Add Set", style = 'margin-top:25px; color: white; background-color: #28A745; border-color: #28A745;'),
+                       actionButton("EditSet", "Edit Set", style = 'margin-top:25px; color: white; background-color: #FFA500; border-color: #FFA500;'),
+                     ),),
+            ),
+            #--
+        )
+      ),
+      #-------------------------------------------------------------------------
       # data table
-      panel(fluidRow(column(
-        12,
-        h4("Exercise History"),
-      ),),
-      fluidRow(column(
-        width = 12,
-        DTOutput("FactSetAll")
-      )),
-      fluidRow(column(
-        width = 12,
-        div(
-          class = "text-right",
-          downloadButton("DownloadData", "Download", style = 'margin-top:25px; color: #000000; background-color: #00FF00; border-color: #00FF00;'),
-        ),
-      ),)),
-      
+      fluidRow(
+        box(width=12, collapsible = TRUE, collapsed = FALSE, title = "Sets",class = "custom-box",
+            #--
+            fluidRow(column(width = 12,
+                            DTOutput("FactSetAll"))),
+            fluidRow(column(
+              width = 12,
+              div(
+                class = "text-right",
+                downloadButton("DownloadData", "Download", style = 'margin-top:25px; color: #000000; background-color: #00FF00; border-color: #00FF00;'),
+              ),
+            ), ),
+            #--
+            )
+      )
     )
   ))
 )
@@ -357,7 +356,7 @@ server <- function(input, output) {
     
     if (length(sel) > 0) {
       curr_data <- FactSet()
-      curr_data <- curr_data[-sel,]  # Remove the selected row
+      curr_data <- curr_data[-sel, ]  # Remove the selected row
       FactSet(curr_data)  # Update the reactive data
       
       # Write the updated data back to the CSV file
@@ -413,16 +412,7 @@ server <- function(input, output) {
         selectInput(
           "editExercise",
           "Exercise",
-          choices = c(
-            "Deadlift",
-            "Squat",
-            "Bench",
-            "Press",
-            "Row",
-            "Abs",
-            "Bicep Curl",
-            "Tricep Extension"
-          ),
+          choices = ChoicesExercise,
           selected = EditData$Exercise
         ),
         numericInput("editLoad", "Load", value = EditData$Load),
@@ -471,6 +461,53 @@ server <- function(input, output) {
     FactSet(tmp)
     write.csv(tmp, "data/FactSet.csv", row.names = FALSE)
     removeModal()
+    
+  })
+  
+  output$TBLOneRepMax <- renderDT({
+    
+    # get max lifts
+    MaxDeadlift <- max(FactSet()$Load[FactSet()$Exercise == "Deadlift"], na.rm = T)
+    MaxSquat    <- max(FactSet()$Load[FactSet()$Exercise == "Squat"], na.rm = T)
+    MaxBench    <- max(FactSet()$Load[FactSet()$Exercise == "Bench"], na.rm = T)
+    MaxPress    <- max(FactSet()$Load[FactSet()$Exercise == "Press"], na.rm = T)
+    
+    # Create matrix for percentages 
+    RepRanges      <- c(1,2,3,4,5,8,10,15)
+    RepPercentages <- c(1, 0.97, 0.94, 0.92, 0.89, 0.80, 0.75, 0.67)
+  
+    # Calculate Max
+    RepDead  <- ceiling((MaxDeadlift * RepPercentages)/5)*5
+    RepSquat <- ceiling((MaxSquat * RepPercentages)/5)*5
+    RepBench <- ceiling((MaxBench * RepPercentages)/5)*5
+    RepPress <- ceiling((MaxPress * RepPercentages)/5)*5
+    
+    # Create table 
+    Results <- data.frame(
+      Reps = RepRanges,
+      RepPercentages =  RepPercentages*100,
+      Deadlift = RepDead,
+      Squat = RepSquat,
+      Bench = RepBench,
+      Press = RepPress
+    )
+    
+    datatable(
+      Results,
+      rownames = FALSE,
+      selection = 'single',
+      editable = FALSE,
+      options = list(
+        scrollY = '300px',
+        scrollX = FALSE,
+        paging = FALSE,
+        searching=FALSE,
+        ordering=FALSE,
+        columnDefs = list(list(
+          className = "nowrap", targets = "_all"
+        ))
+      ),
+    )
     
   })
   
@@ -527,6 +564,8 @@ server <- function(input, output) {
         scrollY = '110px',
         scrollX = FALSE,
         paging = FALSE,
+        searching=FALSE,
+        ordering=FALSE,
         columnDefs = list(list(
           className = "nowrap", targets = "_all"
         ))
@@ -685,7 +724,7 @@ server <- function(input, output) {
   
   observeEvent(input$DeleteMeasure, {
     updated_data <-
-      FactMeasure()[!FactMeasure()$Id == input$SelectMeasureId,]
+      FactMeasure()[!FactMeasure()$Id == input$SelectMeasureId, ]
     FactMeasure(updated_data)
     write.csv(FactMeasure(), "data/FactMeasure.csv", row.names = FALSE)
   })
@@ -867,21 +906,38 @@ server <- function(input, output) {
     )
   })
   
+  
+  
+  observeEvent(input$btn_1rm, {
+    showModal(
+      modalDialog(
+        title = "Reps",
+        size = "l",
+        
+        fluidRow(column(width = 12,
+                        DTOutput("TBLOneRepMax"),)),
+        easyClose = TRUE,
+        # if you want to allow closing by clicking outside the modal or pressing Escape
+        
+      )
+    )
+  })
+  
+  
   observeEvent(input$btn_ref_plate, {
     showModal(
       modalDialog(
         title = "Plate Reference Guide Modal",
         size = "l",
-
+        
+        fluidRow(column(width = 12,
+                        DTOutput("DimPlate"),)),
         fluidRow(column(
-          width = 12,
-          DTOutput("DimPlate"),
-        )),
-        fluidRow(column(12,
-                        div(
-                          class = "text-right",
-                          downloadButton("DownloadDimData", "Download Data", style = 'margin-top:25px; color: #000000; background-color: #00FF00; border-color: #00FF00;')
-                        ),
+          12,
+          div(
+            class = "text-right",
+            downloadButton("DownloadDimData", "Download Data", style = 'margin-top:25px; color: #000000; background-color: #00FF00; border-color: #00FF00;')
+          ),
         )),
         
         easyClose = TRUE,

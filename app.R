@@ -148,12 +148,35 @@ ui <- dashboardPage(
           class = "text-right",
           br(),
           br(),
-          actionButton("btn_summary", "Summary", class = "btn-success", style = "color: white;"),
           actionButton("btn_ref_plate", "Plate Reference", style = "background-color: grey; color: white;"),
           actionButton("btn_1rm", "Rep Calculator")
         ),
         p()
       )),
+      
+      fluidRow(
+        box(width=12, collapsible = TRUE, collapsed = FALSE, title = "Summary",class = "custom-box",
+            
+            #--
+            fluidRow(
+              column(width = 3, uiOutput("BoxDeadliftMax")),
+              column(width = 3, uiOutput("BoxSquatMax")),
+              column(width = 3, uiOutput("BoxBenchMax")),
+              column(width = 3, uiOutput("BoxPressMax"))
+            ),
+            
+            fluidRow(column(
+              width = 12,
+              plotlyOutput("PlotMaxLifts"),
+              selectInput(
+                "SelectFrequency",
+                "Frequency",
+                choices = c("Monthly", "Weekly", "Daily")
+              )
+            ))
+            #--
+      )),
+      
       #-------------------------------------------------------------------------
       # Wendler Panel
       fluidRow(
@@ -873,40 +896,6 @@ server <- function(input, output) {
               options = list(pageLength = -1),
               rownames = FALSE)
   })
-  
-  observeEvent(input$btn_summary, {
-    showModal(
-      modalDialog(
-        title = "Main Lift Summary",
-        size = "l",
-        # set modal size as 'large'
-        
-        p("You can change the frequency for the plot below."),
-        
-        fluidRow(
-          column(width = 3, uiOutput("BoxDeadliftMax")),
-          column(width = 3, uiOutput("BoxSquatMax")),
-          column(width = 3, uiOutput("BoxBenchMax")),
-          column(width = 3, uiOutput("BoxPressMax"))
-        ),
-        
-        fluidRow(column(
-          width = 12,
-          plotlyOutput("PlotMaxLifts"),
-          selectInput(
-            "SelectFrequency",
-            "Frequency",
-            choices = c("Monthly", "Weekly", "Daily")
-          )
-        )),
-        
-        easyClose = TRUE,
-        # if you want to allow closing by clicking outside the modal or pressing Escape
-      )
-    )
-  })
-  
-  
   
   observeEvent(input$btn_1rm, {
     showModal(
